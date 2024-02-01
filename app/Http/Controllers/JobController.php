@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Job;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class JobController extends Controller
@@ -27,6 +27,7 @@ class JobController extends Controller
         }
 
         $file = $request->file('photo1');
+        $filenames = [];
 
         if ($file && $file->isValid()) {
             $originalName = $file->getClientOriginalName();
@@ -34,7 +35,7 @@ class JobController extends Controller
             $file->storeAs('public', $originalName);
         }
 
-        $job = Job::create([
+        DB::table('jobs')->insert([
             'title' => $request->title,
             'location' => $request->location,
             'posted_date' => $request->posted_date,
@@ -42,27 +43,22 @@ class JobController extends Controller
             'description' => $request->description,
             'categoryID' => $request->categoryID,
             'photo1' => $filenames['photo1'] ?? null,
-          
         ]);
 
-
-      
-
-
-
+        $job = DB::table('jobs')->orderByDesc('id')->first();
 
         return response()->json(['message' => 'Job created successfully', 'job' => $job], 201);
     }
 
     public function index()
     {
-        $jobs = Job::all();
+        $jobs = DB::table('jobs')->get();
         return response()->json($jobs);
     }
 
     public function show($id)
     {
-        $job = Job::findOrFail($id);
+        $job = DB::table('jobs')->where('id', $id)->first();
 
         return response()->json($job);
     }
@@ -75,20 +71,20 @@ class JobController extends Controller
             'posted_date' => 'sometimes|required|date',
             'deadline' => 'sometimes|required|string',
             'location' => 'sometimes|required|string',
-            'categoryID' => 'sometimes|nullable|exists:categories,id',
+            // 'categoryID' => 'sometimes|nullable|exists:categories,id',
             'description' => 'sometimes|required|string',
         ]);
 
-        $job = Job::findOrFail($id);
-        $job->update($data);
+        DB::table('jobs')->where('id', $id)->update($data);
+
+        $job = DB::table('jobs')->where('id', $id)->first();
 
         return response()->json(['message' => 'Job updated successfully', 'job' => $job]);
     }
 
     public function destroy($id)
     {
-        $job = Job::findOrFail($id);
-        $job->delete();
+        DB::table('jobs')->where('id', $id)->delete();
 
         return response()->json(['message' => 'Job deleted successfully']);
     }
