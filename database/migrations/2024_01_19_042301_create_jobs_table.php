@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('posted_date');
             $table->string('deadline');
             $table->string('photo1')->nullable();
+            $table->string('video')->nullable();
             $table->string('location');
             $table->unsignedBigInteger('categoryID')->nullable();
             $table->longText('description'); 

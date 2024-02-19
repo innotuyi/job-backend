@@ -14,6 +14,7 @@ class Job extends Model
         'title',
         'location',
         'photo1',
+        'job',
         'posted_date',
         'deadline',
         'location',

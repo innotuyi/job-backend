@@ -14,6 +14,7 @@ class JobController extends Controller
         $rules = [
             'title' => 'required|string',
             'photo1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'video' => 'nullable|file|mimes:mp4,mov,avi|max:20480', // Example rules
             'posted_date' => 'required|date',
             'deadline' => 'required|string',
             'location' => 'required|string',
@@ -27,6 +28,9 @@ class JobController extends Controller
         }
 
         $file = $request->file('photo1');
+
+        $video = $request->file('video');
+
         $filenames = [];
 
         if ($file && $file->isValid()) {
@@ -34,6 +38,13 @@ class JobController extends Controller
             $filenames['photo1'] = $originalName;
             $file->storeAs('public', $originalName);
         }
+
+        if ($video && $video->isValid()) {
+            $originalName = $video->getClientOriginalName();
+            $filenames['video'] = $originalName;
+            $video->storeAs('public', $originalName);
+        }
+
 
         DB::table('jobs')->insert([
             'title' => $request->title,
@@ -43,6 +54,8 @@ class JobController extends Controller
             'description' => $request->description,
             'categoryID' => $request->categoryID,
             'photo1' => $filenames['photo1'] ?? null,
+            'video' => $filenames['video'] ?? null,
+
         ]);
 
         $job = DB::table('jobs')->orderByDesc('id')->first();
