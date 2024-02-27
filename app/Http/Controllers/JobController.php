@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -14,10 +15,11 @@ class JobController extends Controller
         $rules = [
             'title' => 'required|string',
             'photo1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'video' => 'nullable|file|mimes:mp4,mov,avi|max:20480', // Example rules
+            // 'video' => 'nullable|file|mimes:mp4,mov,avi|max:20480', // Example rules
             'posted_date' => 'required|date',
             'deadline' => 'required|string',
             'location' => 'required|string',
+            'document' => 'nullable|file|mimes:pdf,doc,docx|max:20480', // Nullable field, accepts document files (file type), allowed file extensions are pdf, doc, and docx, maximum file size is 20 MB
             'categoryID' => 'nullable|exists:categories,id', // Make sure the category exists
             'description' => 'required|string',
         ];
@@ -30,6 +32,9 @@ class JobController extends Controller
         $file = $request->file('photo1');
 
         $video = $request->file('video');
+
+        $document = $request->file('document');
+
 
         $filenames = [];
 
@@ -45,6 +50,13 @@ class JobController extends Controller
             $video->storeAs('public', $originalName);
         }
 
+        
+        if ($document && $document->isValid()) {
+            $originalName = $document->getClientOriginalName();
+            $filenames['document'] = $originalName;
+            $document->storeAs('public', $originalName);
+        }
+
 
         DB::table('jobs')->insert([
             'title' => $request->title,
@@ -54,6 +66,7 @@ class JobController extends Controller
             'description' => $request->description,
             'categoryID' => $request->categoryID,
             'photo1' => $filenames['photo1'] ?? null,
+            'document' => $filenames['document'] ?? null,
             'video' => $filenames['video'] ?? null,
 
         ]);
@@ -65,8 +78,11 @@ class JobController extends Controller
 
     public function index()
     {
-        $jobs = DB::table('jobs')->get();
-        return response()->json($jobs);
+        $jobs = DB::table('jobs')
+        ->where('deadline', '>=', Carbon::today()->toDateString())
+        ->get();
+
+return response()->json($jobs);;
     }
 
     public function show($id)
@@ -101,4 +117,26 @@ class JobController extends Controller
 
         return response()->json(['message' => 'Job deleted successfully']);
     }
+
+
+    public function incrementViews(Request $request, $id)
+    {
+        // Retrieve the job from the database
+        $job = DB::table('jobs')->where('id', $id)->first();
+
+        // Check if the job exists
+        if ($job) {
+            // Increment the views count
+            $newViewsCount = $job->views_count + 1;
+
+            // Update the views count in the database
+            DB::table('jobs')->where('id', $id)->update(['views_count' => $newViewsCount]);
+
+            return response()->json(['message' => 'View count incremented successfully'], 200);
+        } else {
+            // Job not found, return error response
+            return response()->json(['error' => 'Job not found'], 404);
+        }
+    }
+
 }

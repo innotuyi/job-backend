@@ -14,10 +14,12 @@ return new class extends Migration
         Schema::create('jobs', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->string('posted_date');
-            $table->string('deadline');
+            $table->unsignedInteger('views_count')->default(0); // Define default value
+            $table->date('posted_date');
+            $table->date('deadline');
             $table->string('photo1')->nullable();
             $table->string('video')->nullable();
+            $table->string('document')->nullable();
             $table->string('location');
             $table->unsignedBigInteger('categoryID')->nullable();
             $table->longText('description'); 

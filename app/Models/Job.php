@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,7 +20,15 @@ class Job extends Model
         'deadline',
         'location',
         'description',
-        'categoryID'
+        'document',
+        'categoryID',
+        'views_count'
 
     ];
+
+
+    public function scopeActive(Builder $query)
+    {
+        return $query->whereDate('deadline', '>=', now()->toDateString());
+    }
 }

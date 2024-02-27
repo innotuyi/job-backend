@@ -64,6 +64,10 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 
 
+Route::post('/job/{id}', [JobController::class, 'incrementViews']);
+
+
+
 Route::get('/run-link-command', function () {
 Artisan::call('storage:link');
     return 'Storage link created successfully.';
