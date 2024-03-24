@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\ProductController;
 use Illuminate\Http\Request;
@@ -34,6 +35,8 @@ Route::prefix('jobs')->group(function () {
     Route::delete('/{id}', [JobController::class, 'destroy']); // Delete a job
 });
 
+Route::get ('visibleJobs', [JobController::class, 'visibleJobs']);
+
 
 Route::prefix('products')->group(function () {
     Route::get('/', [ProductController::class, 'index']); // Get all jobs
@@ -56,6 +59,7 @@ Route::prefix('categories')->group(function () {
 
 
 Route::get('/allJobs', [DashboardController::class, 'allJobs']);
+
 Route::get('/allProducts', [DashboardController::class, 'allProducts']);
 
 
@@ -65,6 +69,13 @@ Route::post('/register', [AuthController::class, 'register']);
 
 
 Route::post('/job/{id}', [JobController::class, 'incrementViews']);
+
+
+Route::post('/employee/create', [EmployeeController::class, 'create']);
+
+Route::get('/employee/all', [EmployeeController::class, 'employee']);
+
+
 
 
 

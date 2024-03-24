@@ -12,19 +12,23 @@ class JobController extends Controller
 
     public function create(Request $request)
     {
+
+        $status = ($request->status == 'yes') ? true : false;
+
         $rules = [
             'title' => 'required|string',
             'photo1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             // 'video' => 'nullable|file|mimes:mp4,mov,avi|max:20480', // Example rules
             'posted_date' => 'required|date',
+            //'status'=>'required|boolean',
             'deadline' => 'required|string',
             'location' => 'required|string',
-            'document' => 'nullable|file|mimes:pdf,doc,docx|max:20480', // Nullable field, accepts document files (file type), allowed file extensions are pdf, doc, and docx, maximum file size is 20 MB
+            // 'document' => 'nullable|file|mimes:pdf,doc,docx|max:20480', // Nullable field, accepts document files (file type), allowed file extensions are pdf, doc, and docx, maximum file size is 20 MB
             'categoryID' => 'nullable|exists:categories,id', // Make sure the category exists
             'description' => 'required|string',
         ];
         $validator = Validator::make($request->all(), $rules);
-    
+
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 400);
         }
@@ -50,7 +54,7 @@ class JobController extends Controller
             $video->storeAs('public', $originalName);
         }
 
-        
+
         if ($document && $document->isValid()) {
             $originalName = $document->getClientOriginalName();
             $filenames['document'] = $originalName;
@@ -68,6 +72,8 @@ class JobController extends Controller
             'photo1' => $filenames['photo1'] ?? null,
             'document' => $filenames['document'] ?? null,
             'video' => $filenames['video'] ?? null,
+            'status' => $status,
+
 
         ]);
 
@@ -79,10 +85,21 @@ class JobController extends Controller
     public function index()
     {
         $jobs = DB::table('jobs')
-        ->where('deadline', '>=', Carbon::today()->toDateString())
-        ->get();
+            ->where('deadline', '>=', Carbon::today()->toDateString())
+            ->get();
 
-return response()->json($jobs);;
+        return response()->json($jobs);;
+    }
+
+    public function visibleJobs()
+    {
+        $jobs = DB::table('jobs')
+            ->where('deadline', '>=', Carbon::today()->toDateString())
+            ->where('status', true) // Add condition for status equal to true
+            ->get();
+            return response()->json($jobs);
+
+
     }
 
     public function show($id)
@@ -94,19 +111,24 @@ return response()->json($jobs);;
 
     public function update(Request $request, $id)
     {
+
+        $status = ($request->status == 'yes') ? true : false;
+
         $data = $request->validate([
             'title' => 'sometimes|required|string',
             'photo1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'posted_date' => 'sometimes|required|date',
             'deadline' => 'sometimes|required|string',
             'location' => 'sometimes|required|string',
-            // 'categoryID' => 'sometimes|nullable|exists:categories,id',
             'description' => 'sometimes|required|string',
+            //'status' => 'sometimes|required|boolean', // Include status field in validation rules
         ]);
 
-        DB::table('jobs')->where('id', $id)->update($data);
+        // Add status field to the data array
+        $data['status'] = $status;
 
-        $job = DB::table('jobs')->where('id', $id)->first();
+
+        $job = DB::table('jobs')->where('id', $id)->update($data);
 
         return response()->json(['message' => 'Job updated successfully', 'job' => $job]);
     }
@@ -138,5 +160,4 @@ return response()->json($jobs);;
             return response()->json(['error' => 'Job not found'], 404);
         }
     }
-
 }
