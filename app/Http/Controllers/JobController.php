@@ -6,15 +6,17 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str; // Import the Str facade
+
 
 class JobController extends Controller
 {
 
+
     public function create(Request $request)
     {
-
         $status = ($request->status == 'yes') ? true : false;
-
+    
         $rules = [
             'title' => 'required|string',
             'photo1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -28,42 +30,41 @@ class JobController extends Controller
             'description' => 'required|string',
         ];
         $validator = Validator::make($request->all(), $rules);
-
+    
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 400);
         }
-
+    
+        // Generate slug from the title
+        $slug = Str::slug($request->title);
+    
         $file = $request->file('photo1');
-
         $video = $request->file('video');
-
         $document = $request->file('document');
-
-
+    
         $filenames = [];
-
+    
         if ($file && $file->isValid()) {
             $originalName = $file->getClientOriginalName();
             $filenames['photo1'] = $originalName;
             $file->storeAs('public', $originalName);
         }
-
+    
         if ($video && $video->isValid()) {
             $originalName = $video->getClientOriginalName();
             $filenames['video'] = $originalName;
             $video->storeAs('public', $originalName);
         }
-
-
+    
         if ($document && $document->isValid()) {
             $originalName = $document->getClientOriginalName();
             $filenames['document'] = $originalName;
             $document->storeAs('public', $originalName);
         }
-
-
+    
         DB::table('jobs')->insert([
             'title' => $request->title,
+            'slug' => $slug, // Insert the generated slug into the database
             'location' => $request->location,
             'posted_date' => $request->posted_date,
             'deadline' => $request->deadline,
@@ -73,15 +74,13 @@ class JobController extends Controller
             'document' => $filenames['document'] ?? null,
             'video' => $filenames['video'] ?? null,
             'status' => $status,
-
-
         ]);
-
+    
         $job = DB::table('jobs')->orderByDesc('id')->first();
-
+    
         return response()->json(['message' => 'Job created successfully', 'job' => $job], 201);
     }
-
+    
     public function index()
     {
         $jobs = DB::table('jobs')
@@ -102,12 +101,17 @@ class JobController extends Controller
 
     }
 
-    public function show($id)
+    public function show($slug)
     {
-        $job = DB::table('jobs')->where('id', $id)->first();
-
+        $job = DB::table('jobs')->where('slug', $slug)->first();
+    
+        if (!$job) {
+            return response()->json(['error' => 'Job not found'], 404);
+        }
+    
         return response()->json($job);
     }
+    
 
     public function update(Request $request, $id)
     {

@@ -13,6 +13,7 @@ class Job extends Model
 
     protected $fillable = [
         'title',
+        'slug',
         'status',
         'location',
         'photo1',
@@ -31,5 +32,11 @@ class Job extends Model
     public function scopeActive(Builder $query)
     {
         return $query->whereDate('deadline', '>=', now()->toDateString());
+    }
+
+    public function setSlugAttribute($value)
+    {
+        $this->attributes['title'] = $value;
+        $this->attributes['slug'] = Str::slug($value);
     }
 }

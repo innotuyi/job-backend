@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('jobs', function (Blueprint $table) {
             $table->id();
             $table->string('title');
+            $table->string('slug')->unique()->after('title');
             $table->boolean('status')->default(0);
             $table->unsignedInteger('views_count')->default(0); // Define default value
             $table->date('posted_date');
