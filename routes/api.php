@@ -78,8 +78,10 @@ Route::get('/employee/all', [EmployeeController::class, 'employee']);
 
 
 
-
+    
 Route::get('/run-link-command', function () {
 Artisan::call('storage:link');
     return 'Storage link created successfully.';
 });
+
+

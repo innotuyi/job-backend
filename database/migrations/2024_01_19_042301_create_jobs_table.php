@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('jobs', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->string('slug')->unique()->after('title');
+            $table->string('slug')->unique();
             $table->boolean('status')->default(0);
-            $table->unsignedInteger('views_count')->default(0); // Define default value
+            $table->unsignedBigInteger('views_count')->default(0);  // Use unsignedBigInteger
             $table->date('posted_date');
             $table->date('deadline');
             $table->string('photo1')->nullable();
@@ -24,10 +24,14 @@ return new class extends Migration
             $table->string('document')->nullable();
             $table->string('location');
             $table->unsignedBigInteger('categoryID')->nullable();
-            $table->longText('description'); 
-            $table->foreign('categoryID')->references('id')->on('categories')
-            ->onDelete('restrict')
-            ->onUpdate('cascade');
+            $table->longText('description');
+    
+            $table->foreign('categoryID')
+                ->references('id')
+                ->on('categories')
+                ->onDelete('restrict')
+                ->onUpdate('cascade');
+    
             $table->timestamps();
         });
     }
