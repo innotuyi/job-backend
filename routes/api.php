@@ -28,7 +28,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::prefix('jobs')->group(function () {
     Route::get('/', [JobController::class, 'index']); // Get all jobs
-    Route::get('/{id}', [JobController::class, 'show']); // Get a specific job by ID
+    Route::get('/{slug}', [JobController::class, 'show']); // Get a specific job by ID
 
     Route::post('/', [JobController::class, 'create']); // Create a new job
     Route::post('/{id}', [JobController::class, 'update']); // Update an existing job
@@ -78,7 +78,7 @@ Route::get('/employee/all', [EmployeeController::class, 'employee']);
 
 
 
-    
+
 Route::get('/run-link-command', function () {
 Artisan::call('storage:link');
     return 'Storage link created successfully.';
