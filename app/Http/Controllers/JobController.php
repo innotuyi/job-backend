@@ -99,6 +99,9 @@ class JobController extends Controller
             return response()->json($jobs);
 
 
+            
+
+
     }
 
     public function show($slug)

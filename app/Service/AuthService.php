@@ -17,7 +17,6 @@ class AuthService
     public function register( string $name,string $email, string $password)
     {
 
-      return 'hy';
 
         DB::insert("INSERT INTO users (name, email, password, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())", [$name, $email,  Hash::make($password),]);
 
@@ -43,26 +42,25 @@ class AuthService
 
     public function login($email, $password)
     {
-
-        $email = $email;
-        $password = $password;
-
+        // Retrieve the user by email
         $user = User::where('email', $email)->first();
-
-        if (is_null($user) || !Hash::check($password, $user->password)) {
+    
+        // Check if the user exists and verify the password
+        if (!$user || !Hash::check($password, $user->password)) {
             throw ValidationException::withMessages([
                 'email' => 'Invalid credentials',
             ]);
         }
-
-        $token = $user->createToken('myapptoken');
-        $plainTextToken = $token->plainTextToken;
-
+    
+        // Create a token for the authenticated user
+        $token = $user->createToken('myapptoken')->plainTextToken;
+    
+        // Return the token in response
         return [
-            'token' => $plainTextToken
+            'token' => $token
         ];
     }
-
+    
     
     public function logout()
     {
