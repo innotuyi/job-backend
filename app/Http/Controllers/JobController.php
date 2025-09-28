@@ -48,6 +48,9 @@ class JobController extends Controller
             $originalName = $file->getClientOriginalName();
             $filenames['photo1'] = $originalName;
             $file->storeAs('public', $originalName);
+            
+            // Log the file storage for debugging
+            \Log::info('File stored: ' . $originalName . ' in public disk');
         }
 
         if ($video && $video->isValid()) {
@@ -161,5 +164,27 @@ public function visibleJobs()
             // Job not found, return error response
             return response()->json(['error' => 'Job not found'], 404);
         }
+    }
+
+    public function serveImage($filename)
+    {
+        $path = storage_path('app/public/' . $filename);
+        
+        if (!file_exists($path)) {
+            return response()->json(['error' => 'Image not found'], 404);
+        }
+        
+        return response()->file($path);
+    }
+
+    public function serveDocument($filename)
+    {
+        $path = storage_path('app/public/' . $filename);
+        
+        if (!file_exists($path)) {
+            return response()->json(['error' => 'Document not found'], 404);
+        }
+        
+        return response()->file($path);
     }
 }

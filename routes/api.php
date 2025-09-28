@@ -37,6 +37,12 @@ Route::prefix('jobs')->group(function () {
 
 Route::get ('visibleJobs', [JobController::class, 'visibleJobs']);
 
+// Route for serving images
+Route::get('/images/{filename}', [JobController::class, 'serveImage']);
+
+// Route for serving documents
+Route::get('/documents/{filename}', [JobController::class, 'serveDocument']);
+
 
 Route::prefix('products')->group(function () {
     Route::get('/', [ProductController::class, 'index']); // Get all jobs
