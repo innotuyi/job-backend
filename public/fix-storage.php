@@ -14,20 +14,6 @@ $publicStoragePath = $basePath . '/public/storage';
 $results = [];
 $success = true;
 
-echo json_encode([
-    'status' => 'starting',
-    'message' => 'Storage fix process started...',
-    'base_path' => $basePath,
-    'storage_path' => $storagePath,
-    'public_storage_path' => $publicStoragePath
-], JSON_PRETTY_PRINT);
-
-// Flush output to show progress
-if (ob_get_level()) {
-    ob_flush();
-    flush();
-}
-
 // 1. Remove existing storage link if it exists
 if (is_link($publicStoragePath) || is_dir($publicStoragePath)) {
     if (is_link($publicStoragePath)) {
@@ -102,5 +88,5 @@ $response = [
     ]
 ];
 
-echo "\n\n" . json_encode($response, JSON_PRETTY_PRINT);
+echo json_encode($response, JSON_PRETTY_PRINT);
 ?>
