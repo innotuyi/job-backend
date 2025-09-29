@@ -46,23 +46,30 @@ class JobController extends Controller
 
         if ($file && $file->isValid()) {
             $originalName = $file->getClientOriginalName();
-            $filenames['photo1'] = $originalName;
-            $file->storeAs('public', $originalName);
+            $filename = time() . '_' . $originalName; // Add timestamp to avoid conflicts
+            $filenames['photo1'] = $filename;
+            $file->storeAs('public', $filename);
             
             // Log the file storage for debugging
-            \Log::info('File stored: ' . $originalName . ' in public disk');
+            \Log::info('Image stored: ' . $filename . ' in public disk');
         }
 
         if ($video && $video->isValid()) {
             $originalName = $video->getClientOriginalName();
-            $filenames['video'] = $originalName;
-            $video->storeAs('public', $originalName);
+            $filename = time() . '_' . $originalName;
+            $filenames['video'] = $filename;
+            $video->storeAs('public', $filename);
+            
+            \Log::info('Video stored: ' . $filename . ' in public disk');
         }
 
         if ($document && $document->isValid()) {
             $originalName = $document->getClientOriginalName();
-            $filenames['document'] = $originalName;
-            $document->storeAs('public', $originalName);
+            $filename = time() . '_' . $originalName;
+            $filenames['document'] = $filename;
+            $document->storeAs('public', $filename);
+            
+            \Log::info('Document stored: ' . $filename . ' in public disk');
         }
 
         DB::table('jobs')->insert([
@@ -171,10 +178,15 @@ public function visibleJobs()
         $path = storage_path('app/public/' . $filename);
         
         if (!file_exists($path)) {
-            return response()->json(['error' => 'Image not found'], 404);
+            \Log::error('Image not found: ' . $path);
+            return response()->json(['error' => 'Image not found: ' . $filename], 404);
         }
         
-        return response()->file($path);
+        $mimeType = mime_content_type($path);
+        return response()->file($path, [
+            'Content-Type' => $mimeType,
+            'Cache-Control' => 'public, max-age=31536000',
+        ]);
     }
 
     public function serveDocument($filename)
@@ -182,9 +194,140 @@ public function visibleJobs()
         $path = storage_path('app/public/' . $filename);
         
         if (!file_exists($path)) {
-            return response()->json(['error' => 'Document not found'], 404);
+            \Log::error('Document not found: ' . $path);
+            return response()->json(['error' => 'Document not found: ' . $filename], 404);
         }
         
-        return response()->file($path);
+        $mimeType = mime_content_type($path);
+        return response()->file($path, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline; filename="' . basename($filename) . '"',
+        ]);
+    }
+
+    public function listFiles()
+    {
+        $files = [];
+        $storagePath = storage_path('app/public/');
+        
+        if (is_dir($storagePath)) {
+            $fileList = scandir($storagePath);
+            foreach ($fileList as $file) {
+                if ($file != '.' && $file != '..' && !is_dir($storagePath . $file)) {
+                    $files[] = [
+                        'name' => $file,
+                        'size' => filesize($storagePath . $file),
+                        'modified' => date('Y-m-d H:i:s', filemtime($storagePath . $file)),
+                        'url' => url('storage/' . $file),
+                        'api_url' => url('api/images/' . $file)
+                    ];
+                }
+            }
+        }
+        
+        return response()->json($files);
+    }
+
+    public function cleanStorage()
+    {
+        $storagePath = storage_path('app/public/');
+        $files = [];
+        
+        if (is_dir($storagePath)) {
+            $fileList = scandir($storagePath);
+            foreach ($fileList as $file) {
+                if ($file != '.' && $file != '..' && !is_dir($storagePath . $file)) {
+                    $files[] = $file;
+                }
+            }
+        }
+        
+        return response()->json([
+            'message' => 'Storage directory contents',
+            'files' => $files,
+            'count' => count($files),
+            'path' => $storagePath
+        ]);
+    }
+
+    public function fixStorage()
+    {
+        $basePath = base_path();
+        $storagePath = storage_path('app/public/');
+        $publicStoragePath = public_path('storage');
+        
+        $results = [];
+        
+        // 1. Remove existing storage link if it exists
+        if (is_link($publicStoragePath) || is_dir($publicStoragePath)) {
+            if (is_link($publicStoragePath)) {
+                unlink($publicStoragePath);
+                $results[] = "✓ Removed existing symbolic link";
+            } else {
+                rmdir($publicStoragePath);
+                $results[] = "✓ Removed existing directory";
+            }
+        } else {
+            $results[] = "✓ No existing storage link found";
+        }
+        
+        // 2. Create storage directory if it doesn't exist
+        if (!is_dir($storagePath)) {
+            mkdir($storagePath, 0755, true);
+            $results[] = "✓ Created storage directory";
+        } else {
+            $results[] = "✓ Storage directory already exists";
+        }
+        
+        // 3. Create storage link
+        if (symlink($storagePath, $publicStoragePath)) {
+            $results[] = "✓ Storage link created successfully";
+        } else {
+            $results[] = "✗ Failed to create storage link";
+        }
+        
+        // 4. Set permissions
+        chmod($storagePath, 0755);
+        if (is_link($publicStoragePath)) {
+            chmod($publicStoragePath, 0755);
+        }
+        $results[] = "✓ Permissions set";
+        
+        // 5. List current files
+        $files = [];
+        if (is_dir($storagePath)) {
+            $fileList = scandir($storagePath);
+            foreach ($fileList as $file) {
+                if ($file != '.' && $file != '..' && !is_dir($storagePath . $file)) {
+                    $files[] = [
+                        'name' => $file,
+                        'size' => filesize($storagePath . $file),
+                        'modified' => date('Y-m-d H:i:s', filemtime($storagePath . $file))
+                    ];
+                }
+            }
+        }
+        
+        // 6. Test the link
+        $linkTest = is_link($publicStoragePath) ? "✓ Link exists" : "✗ Storage link not found";
+        $results[] = $linkTest;
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Storage setup completed',
+            'results' => $results,
+            'files' => $files,
+            'file_count' => count($files),
+            'storage_path' => $storagePath,
+            'public_storage_path' => $publicStoragePath,
+            'base_url' => url('/'),
+            'test_urls' => [
+                'storage_link' => url('storage/'),
+                'api_images' => url('api/images/'),
+                'api_documents' => url('api/documents/'),
+                'list_files' => url('api/files'),
+                'storage_info' => url('api/storage-info')
+            ]
+        ]);
     }
 }

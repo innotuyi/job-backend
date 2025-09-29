@@ -43,6 +43,11 @@ Route::get('/images/{filename}', [JobController::class, 'serveImage']);
 // Route for serving documents
 Route::get('/documents/{filename}', [JobController::class, 'serveDocument']);
 
+// Route for listing files and storage management
+Route::get('/files', [JobController::class, 'listFiles']);
+Route::get('/storage-info', [JobController::class, 'cleanStorage']);
+Route::get('/fix-storage', [JobController::class, 'fixStorage']);
+
 
 Route::prefix('products')->group(function () {
     Route::get('/', [ProductController::class, 'index']); // Get all jobs
